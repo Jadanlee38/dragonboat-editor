@@ -12,8 +12,25 @@ VIDEO_FOLDER = "raw_footage"
 # The name of the final combined highlight video.
 OUTPUT_FILE = "practice_highlights.mp4"
 
-# Detection settings (you can still tune these).
+# --- Set the output resolution ---
+# Set the desired height in pixels. The width will be adjusted automatically.
+#   - 1080p (Full HD) = 1080
+#   - 1440p (2k QHD)  = 1440
+#   - To keep the original resolution of the video, set this to: None
+TARGET_RESOLUTION = None 
+
+# --- Detection settings (you can tune these) ---
+
+# CONFIDENCE_THRESHOLD controls the detection's ACCURACY. It's how "sure" the AI
+# needs to be before it calls an object a "boat" (from 0.0 to 1.0).
+#   - Raise to 0.7 to be more "strict." This reduces false alarms but might miss distant boats.
+#   - Lower to 0.4 to be more "lenient." This finds distant boats better but may misidentify other objects.
 CONFIDENCE_THRESHOLD = 0.5
+
+# CHECK_EVERY_N_SECONDS controls the script's SPEED vs. PRECISION. It's how
+# often the script analyzes the video.
+#   - Raise to 2.0 for a much faster analysis. The start/end times of clips may be less precise.
+#   - Lower to 0.5 for a slower but more precise analysis that catches very brief moments.
 CHECK_EVERY_N_SECONDS = 1
 
 # --- 2. The Analysis Function (with a small optimization) ---
@@ -113,7 +130,14 @@ def main():
             video = VideoFileClip(str(video_path))
             for start, end in timestamps:
                 if start < end:
-                    all_clips.append(video.subclip(start, end))
+                    subclip = video.subclip(start, end)
+                    
+                    # NEW: Resize the clip if a target resolution is set.
+                    if TARGET_RESOLUTION:
+                        subclip = subclip.resize(height=TARGET_RESOLUTION)
+                    
+                    all_clips.append(subclip)
+
             # IMPORTANT: Close the video file to free up memory.
             video.close()
 
